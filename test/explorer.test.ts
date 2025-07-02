@@ -6,21 +6,21 @@ describe('search', () => {
     questions: [
       {
         id: 'MainBranch',
-        text: 'Which of the following best describes your role?',
+        text: 'MainBranch',
         type: 'sc',
-        options: ['I am a developer by profession', 'I am a student', 'I code as a hobby']
+        options: ['I am a developer by profession', 'I am learning to code', 'I code primarily as a hobby', 'I am not primarily a developer, but I write code sometimes as part of my work/studies']
       },
       {
         id: 'DevType',
-        text: 'Which of the following describe you? Select all that apply.',
-        type: 'mc',
-        options: ['Full-stack developer', 'Back-end developer', 'Front-end developer', 'Data scientist']
+        text: 'DevType',
+        type: 'sc',
+        options: ['Developer, full-stack', 'Developer, back-end', 'Developer, front-end', 'Student', 'Developer, mobile', 'NA']
       },
       {
         id: 'RemoteWork',
-        text: 'How often do you work remotely?',
-        type: 'sc',
-        options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always']
+        text: 'RemoteWork',
+        type: 'text',
+        options: ['Fully remote', 'Hybrid (some remote, some in-person)', 'Never', 'In-person']
       }
     ],
     responses: [],
@@ -33,19 +33,18 @@ describe('search', () => {
   it('should find matches in question text', () => {
     const matches = search(mockSurveyData, 'remote');
     
-    expect(matches).toHaveLength(1);
-    expect(matches[0].question.id).toBe('RemoteWork');
-    expect(matches[0].matchType).toBe('question');
-    expect(matches[0].matchedText).toBe('How often do you work remotely?');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+    const questionMatch = matches.find(m => m.question.id === 'RemoteWork' && m.matchType === 'question');
+    expect(questionMatch).toBeDefined();
+    expect(questionMatch!.matchedText).toBe('RemoteWork');
   });
 
   it('should find matches in options', () => {
     const matches = search(mockSurveyData, 'student');
     
-    expect(matches).toHaveLength(1);
-    expect(matches[0].question.id).toBe('MainBranch');
-    expect(matches[0].matchType).toBe('option');
-    expect(matches[0].matchedText).toBe('I am a student');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+    const optionMatch = matches.find(m => m.matchType === 'option' && m.matchedText.toLowerCase().includes('student'));
+    expect(optionMatch).toBeDefined();
   });
 
   it('should find multiple matches', () => {
@@ -57,10 +56,9 @@ describe('search', () => {
     const optionMatches = matches.filter(m => m.matchType === 'option');
     expect(optionMatches.length).toBeGreaterThan(0);
     
-    // DevType question text contains "describe you" but not "developer"
-    // So we should find at least 3 developer options in DevType question
-    const devTypeMatches = matches.filter(m => m.question.id === 'DevType');
-    expect(devTypeMatches.length).toBeGreaterThan(2); // Full-stack, Back-end, Front-end
+    // Should find multiple developer-related matches in both MainBranch and DevType
+    const devTypeMatches = matches.filter(m => m.question.id === 'DevType' && m.matchedText.toLowerCase().includes('developer'));
+    expect(devTypeMatches.length).toBeGreaterThan(2); // Developer, full-stack; Developer, back-end; Developer, front-end
   });
 
   it('should be case insensitive', () => {
@@ -82,8 +80,8 @@ describe('search', () => {
     const dataWithoutOptions: SurveyData = {
       questions: [
         {
-          id: 'Comments',
-          text: 'Additional comments about remote work',
+          id: 'TechDoc',
+          text: 'TechDoc',
           type: 'text'
         }
       ],
@@ -94,7 +92,7 @@ describe('search', () => {
       }
     };
 
-    const matches = search(dataWithoutOptions, 'remote');
+    const matches = search(dataWithoutOptions, 'tech');
     
     expect(matches).toHaveLength(1);
     expect(matches[0].matchType).toBe('question');

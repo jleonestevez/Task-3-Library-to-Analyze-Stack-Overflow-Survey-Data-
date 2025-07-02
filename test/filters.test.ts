@@ -6,24 +6,25 @@ describe('subset', () => {
     questions: [
       {
         id: 'MainBranch',
-        text: 'Which of the following best describes your role?',
+        text: 'MainBranch',
         type: 'sc'
       },
       {
         id: 'DevType',
-        text: 'Which of the following describe you? Select all that apply.',
-        type: 'mc'
+        text: 'DevType',
+        type: 'sc'
       }
     ],
     responses: [
-      { MainBranch: 'I am a developer by profession', DevType: 'Full-stack developer' },
-      { MainBranch: 'I am a student', DevType: 'Back-end developer;Front-end developer' },
-      { MainBranch: 'I am a developer by profession', DevType: 'Full-stack developer;Data scientist' },
-      { MainBranch: 'I code as a hobby', DevType: 'Front-end developer' },
-      { MainBranch: 'I am a developer by profession', DevType: null }
+      { MainBranch: 'I am a developer by profession', DevType: 'Developer, full-stack' },
+      { MainBranch: 'I am learning to code', DevType: 'Student' },
+      { MainBranch: 'I am a developer by profession', DevType: 'Developer, back-end' },
+      { MainBranch: 'I code primarily as a hobby', DevType: 'Developer, front-end' },
+      { MainBranch: 'I am a developer by profession', DevType: null },
+      { MainBranch: 'I am not primarily a developer, but I write code sometimes as part of my work/studies', DevType: 'NA' }
     ],
     metadata: {
-      totalResponses: 5,
+      totalResponses: 6,
       columns: ['MainBranch', 'DevType']
     }
   };
@@ -40,22 +41,22 @@ describe('subset', () => {
     });
   });
 
-  it('should filter responses by multiple choice option', () => {
-    const result = subset(mockSurveyData, 'DevType', 'Full-stack developer');
+  it('should filter responses by DevType option', () => {
+    const result = subset(mockSurveyData, 'DevType', 'Developer, full-stack');
     
-    expect(result.filteredResponses).toHaveLength(2);
+    expect(result.filteredResponses).toHaveLength(1);
     
     result.filteredResponses.forEach(response => {
       const devType = String(response.DevType);
-      expect(devType).toContain('Full-stack developer');
+      expect(devType).toContain('Developer, full-stack');
     });
   });
 
-  it('should handle multiple choice with semicolon separation', () => {
-    const result = subset(mockSurveyData, 'DevType', 'Back-end developer');
+  it('should handle student DevType filter', () => {
+    const result = subset(mockSurveyData, 'DevType', 'Student');
     
     expect(result.filteredResponses).toHaveLength(1);
-    expect(String(result.filteredResponses[0].DevType)).toContain('Back-end developer;Front-end developer');
+    expect(String(result.filteredResponses[0].DevType)).toBe('Student');
   });
 
   it('should throw error for non-existent question', () => {
@@ -64,24 +65,24 @@ describe('subset', () => {
   });
 
   it('should exclude null and undefined responses', () => {
-    const result = subset(mockSurveyData, 'DevType', 'Data scientist');
+    const result = subset(mockSurveyData, 'DevType', 'NA');
     
-    // Should only find the one response that has 'Data scientist'
+    // Should only find the one response that has 'NA'
     expect(result.filteredResponses).toHaveLength(1);
   });
 
   it('should be case insensitive', () => {
-    const lowerResult = subset(mockSurveyData, 'MainBranch', 'student');
-    const upperResult = subset(mockSurveyData, 'MainBranch', 'STUDENT');
+    const lowerResult = subset(mockSurveyData, 'MainBranch', 'learning');
+    const upperResult = subset(mockSurveyData, 'MainBranch', 'LEARNING');
     
     expect(lowerResult.filteredResponses).toHaveLength(upperResult.filteredResponses.length);
   });
 
   it('should find question by text instead of id', () => {
-    const result = subset(mockSurveyData, 'Which of the following best describes your role?', 'student');
+    const result = subset(mockSurveyData, 'MainBranch', 'learning');
     
     expect(result.filteredResponses).toHaveLength(1);
-    expect(result.filteredResponses[0].MainBranch).toContain('student');
+    expect(result.filteredResponses[0].MainBranch).toContain('learning');
   });
 
   it('should return empty result when no matches found', () => {

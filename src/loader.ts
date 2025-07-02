@@ -21,12 +21,13 @@ export function loadSurvey(filePath: string): SurveyData {
   const headers = jsonData[0];
   const dataRows = jsonData.slice(1);
 
-  // Parse questions from headers
-  const questions = parseQuestionsFromHeaders(headers);
-  
-  // Parse responses
+  // Parse responses first
   const responses = parseResponses(dataRows, headers);
 
+  // Parse questions from headers and populate options from responses
+  const questions = parseQuestionsFromHeaders(headers);
+  populateQuestionOptions(questions, responses);
+  
   return {
     questions,
     responses,
@@ -115,4 +116,31 @@ function parseResponses(dataRows: string[][], headers: string[]): Response[] {
   }
   
   return responses;
+}
+
+function populateQuestionOptions(questions: Question[], responses: Response[]): void {
+  for (const question of questions) {
+    if (question.type === 'sc' || question.type === 'mc') {
+      const optionsSet = new Set<string>();
+      
+      for (const response of responses) {
+        const value = response[question.id];
+        if (value !== null && value !== undefined && value !== '') {
+          const stringValue = String(value);
+          
+          // For multiple choice questions, split by semicolon
+          if (question.type === 'mc' && stringValue.includes(';')) {
+            const splitOptions = stringValue.split(';').map(opt => opt.trim());
+            splitOptions.forEach(opt => {
+              if (opt) optionsSet.add(opt);
+            });
+          } else {
+            optionsSet.add(stringValue);
+          }
+        }
+      }
+      
+      question.options = Array.from(optionsSet).sort();
+    }
+  }
 }
